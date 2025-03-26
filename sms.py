@@ -12,10 +12,6 @@ def sms_reply():
 
     if incoming_msg == "join":
         response.message("Welcome! You can now start earning by completing tasks. Reply 'TASK' to begin.")
-    elif incoming_msg == "task":
-        response.message("Your first task: Label an image. Click here: https://yourwebsite.com/tasks")
-    else:
-        response.message("Invalid response. Reply 'JOIN' to start.")
 
     return str(response)
 
