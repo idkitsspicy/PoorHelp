@@ -7,21 +7,19 @@ from twilio.rest import Client
 import os
 import json
 
-# ✅ Load Firebase credentials from GitHub Secrets
-firebase_config = {
-    "type": "service_account",
-    "project_id": os.getenv("FIREBASE_PROJECT_ID"),
-    "private_key": os.getenv("FIREBASE_PRIVATE_KEY").replace("\\n", "\n"),
-    "client_email": os.getenv("FIREBASE_CLIENT_EMAIL"),
-}
+# ✅ Load Firebase credentials from GitHub Secrets (Full JSON)
+firebase_json = os.getenv("FIREBASE_CREDENTIALS")  # 🔹 Store full JSON in env var
+cred_dict = json.loads(firebase_json)  # Convert JSON string to dictionary
 
-# ✅ Initialize Firebase only once
-cred = credentials.Certificate(firebase_config)
-firebase_admin.initialize_app(cred)
+# ✅ Initialize Firebase with full credentials
+if not firebase_admin._apps:  # Ensure Firebase is initialized only once
+    cred = credentials.Certificate(cred_dict)
+    firebase_admin.initialize_app(cred)
 db = firestore.client()
 
 # ✅ Load Google Cloud Credentials from GitHub Secrets
 google_credentials = json.loads(os.getenv("GOOGLE_CRED"))
+
 # ✅ Save Google credentials as a temporary JSON file
 with open("service-account-key.json", "w") as f:
     json.dump(google_credentials, f)
