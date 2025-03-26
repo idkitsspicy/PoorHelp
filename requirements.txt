@@ -1,5 +1,6 @@
-flask
-twilio
-requests
-gunicorn
+Flask
+firebase-admin
 google-cloud-translate
+twilio
+gunicorn
+
