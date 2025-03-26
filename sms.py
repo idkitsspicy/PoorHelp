@@ -21,7 +21,7 @@ firebase_admin.initialize_app(cred)
 db = firestore.client()
 
 # ✅ Load Google Cloud Credentials from GitHub Secrets
-google_credentials = json.loads(os.getenv("GOOGLE_CREDENTIALS"))
+google_credentials = json.loads(os.getenv("google_cred"))
 
 # ✅ Save Google credentials as a temporary JSON file
 with open("service-account-key.json", "w") as f:
