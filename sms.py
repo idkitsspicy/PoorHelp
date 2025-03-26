@@ -8,7 +8,7 @@ import os
 import json
 
 # ✅ Load Firebase credentials from GitHub Secrets (Full JSON)
-firebase_json = os.getenv("FIREBASE_CREDENTIALS")  # 🔹 Store full JSON in env var
+firebase_json = os.getenv("FIREBASE_KEY")  # 🔹 Store full JSON in env var
 cred_dict = json.loads(firebase_json)  # Convert JSON string to dictionary
 
 # ✅ Initialize Firebase with full credentials
