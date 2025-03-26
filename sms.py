@@ -1,19 +1,22 @@
 
 
 from twilio.rest import Client
+import os
 
 # Twilio credentials (replace with yours)
-TWILIO_SID = "ACbd3ded0f95fcf4ae58a1d510b533de51"
-TWILIO_AUTH_TOKEN = "920dd511217f5f8cc5712597e5668b57"
-TWILIO_PHONE_NUMBER = "+13092716987"
+
+TWILIO_SID = os.getenv("TWILIO_SID")
+TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
+TWILIO_PHONE_NUMBER = os.getenv("TWILIO_PHONE_NUMBER")
+
 
 client = Client(TWILIO_SID, TWILIO_AUTH_TOKEN)
 
 def send_sms(user_phone, message):
     sms = client.messages.create(
         body=message,
-        from_=+13092716987,
-        to=+917386858392
+        from_=TWILIO_PHONE_NUMBER,
+        to=user_phone
     )
     return sms.sid  # Returns SMS ID (for tracking)
 
@@ -29,7 +32,7 @@ app = Flask(__name__)
 @app.route("/sms", methods=['POST'])
 def sms_reply():
     incoming_msg = request.form.get('Body').strip().lower()
-    user_phone = request.form.get('from')
+    user_phone = request.form.get('From')
 
     response = MessagingResponse()
 
