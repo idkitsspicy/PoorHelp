@@ -7,24 +7,18 @@ from twilio.rest import Client
 import os
 import json
 
-# ✅ Load Firebase credentials from GitHub Secrets (Full JSON)
-firebase_json = os.getenv("FIREBASE_KEY")  # 🔹 Store full JSON in env var
-cred_dict = json.loads(firebase_json)  # Convert JSON string to dictionary
-
-# ✅ Initialize Firebase with full credentials
-if not firebase_admin._apps:  # Ensure Firebase is initialized only once
+# ✅ Load Firebase credentials
+firebase_json = os.getenv("FIREBASE_KEY")
+cred_dict = json.loads(firebase_json)
+if not firebase_admin._apps:
     cred = credentials.Certificate(cred_dict)
     firebase_admin.initialize_app(cred)
 db = firestore.client()
 
-# ✅ Load Google Cloud Credentials from GitHub Secrets
+# ✅ Load Google Cloud credentials
 google_credentials = json.loads(os.getenv("GOOGLE_CRED"))
-
-# ✅ Save Google credentials as a temporary JSON file
 with open("service-account-key.json", "w") as f:
     json.dump(google_credentials, f)
-
-# ✅ Set the environment variable for Google API
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "service-account-key.json"
 
 # ✅ Initialize Google Translate API
@@ -50,8 +44,14 @@ def set_user_data(phone, data):
 
 @app.route("/sms", methods=['POST'])
 def sms_reply():
-    incoming_msg = request.form.get('Body').strip()
     user_phone = request.form.get('From')
+
+    # ✅ Ensure it's a WhatsApp message
+    if not user_phone.startswith("whatsapp:"):
+        return str(MessagingResponse())  # Ignore non-WhatsApp messages
+
+    user_phone = user_phone.replace("whatsapp:", "").strip()
+    incoming_msg = request.form.get('Body').strip()
 
     response = MessagingResponse()
     user_data = get_user_data(user_phone)
@@ -59,27 +59,38 @@ def sms_reply():
     # ✅ Detect language for new users
     if not user_data:
         detected_lang = translate_client.detect_language(incoming_msg)['language']
+        
+        # ✅ Ensure only supported Indian languages are used
+        supported_languages = ["hi", "bn", "ta", "te", "mr", "gu", "ml", "kn", "pa", "ur"]
+        if detected_lang not in supported_languages:
+            detected_lang = "hi"  # Default to Hindi if not supported
+
         user_data = {"language": detected_lang, "earnings": 0}
         set_user_data(user_phone, user_data)
-        response.message(f"भाषा सेट हो गई: {detected_lang.upper()}! 'TASK' लिखें कमाने के लिए।")
+
+        translated_msg = translate_client.translate(
+            "Your language has been set. Reply with 'TASK' to earn!", target_language=detected_lang
+        )['translatedText']
+        
+        response.message(translated_msg)
         return str(response)
 
     lang = user_data["language"]
 
     # ✅ Process user commands
     if incoming_msg.lower() == "task":
-        translated_task = translate_client.translate(
-            "Here is your simple task: Solve 5 + 3 = ?", target_language=lang
-        )['translatedText']
+        task_text = "Here is your simple task: Solve 5 + 3 = ?"
+        translated_task = translate_client.translate(task_text, target_language=lang)['translatedText']
         response.message(translated_task)
 
     elif incoming_msg.lower() == "balance":
-        response.message(f"आपकी कुल कमाई: ₹{user_data['earnings']}।")
+        balance_text = f"Your total earnings: ₹{user_data['earnings']}."
+        translated_balance = translate_client.translate(balance_text, target_language=lang)['translatedText']
+        response.message(translated_balance)
 
     else:
-        translated_msg = translate_client.translate(
-            "Invalid response. Reply 'TASK' to start.", target_language=lang
-        )['translatedText']
+        invalid_text = "Invalid response. Reply 'TASK' to start."
+        translated_msg = translate_client.translate(invalid_text, target_language=lang)['translatedText']
         response.message(translated_msg)
 
     return str(response)
